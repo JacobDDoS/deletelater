@@ -20,13 +20,7 @@ export function App() {
   )
 
   const loadAllTransactions = useCallback(async () => {
-    setIsLoading(true)
-    transactionsByEmployeeUtils.invalidateData()
-
-    await employeeUtils.fetchAll()
     await paginatedTransactionsUtils.fetchAll()
-
-    setIsLoading(false)
   }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
 
   const loadTransactionsByEmployee = useCallback(
@@ -38,7 +32,12 @@ export function App() {
   )
 
   useEffect(() => {
-    if (employees === null && !employeeUtils.loading) {
+    if (employees === null && !employeeUtils.loading) { // Solution to Fifth Bug
+      setIsLoading(true)
+      transactionsByEmployeeUtils.invalidateData()
+      employeeUtils.fetchAll().then(()=> {
+      setIsLoading(false)
+    })
       loadAllTransactions()
     }
   }, [employeeUtils.loading, employees, loadAllTransactions])
@@ -65,6 +64,11 @@ export function App() {
               return
             }
 
+            if (newValue.firstName === EMPTY_EMPLOYEE.firstName && newValue.lastName === EMPTY_EMPLOYEE.lastName) {
+              await paginatedTransactionsUtils.fetchAll(); // Solution to the Third bug
+              return
+            }
+
             await loadTransactionsByEmployee(newValue.id)
           }}
         />
@@ -74,7 +78,7 @@ export function App() {
         <div className="RampGrid">
           <Transactions transactions={transactions} />
 
-          {transactions !== null && (
+          {transactions !== null && paginatedTransactions !== null && paginatedTransactions.nextPage !== null && ( //Solution to the sixth bug
             <button
               className="RampButton"
               disabled={paginatedTransactionsUtils.loading}
